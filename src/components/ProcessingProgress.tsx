@@ -1,17 +1,26 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, CheckCircle, Zap, Music, Mic } from 'lucide-react';
+import { Loader2, Mic } from 'lucide-react';
+
+interface ProcessingResults {
+  processingId: string;
+  vocals: string;
+  music: string;
+  vocalsWav: string;
+  musicWav: string;
+  vocalsFlac: string;
+  musicFlac: string;
+}
 
 interface ProcessingProgressProps {
   processingId: string;
-  onComplete: (results: any) => void;
+  onComplete: (results: ProcessingResults) => void;
   onError: (error: string) => void;
 }
 
 export default function ProcessingProgress({ processingId, onComplete, onError }: ProcessingProgressProps) {
   const [progress, setProgress] = useState(0);
-  const [stage, setStage] = useState('processing');
   const [message, setMessage] = useState('Starting processing...');
 
   useEffect(() => {
@@ -66,7 +75,7 @@ export default function ProcessingProgress({ processingId, onComplete, onError }
                 }, 1000);
               }
             }
-          } catch (error) {
+          } catch {
             console.log('Polling error, using fallback demo');
             setProgress(prev => Math.min(prev + 5, 100));
             if (progress >= 95) {
@@ -92,8 +101,7 @@ export default function ProcessingProgress({ processingId, onComplete, onError }
         
         return () => clearInterval(pollTimer);
         
-      } catch (error) {
-        console.error('Processing error:', error);
+      } catch {
         onError('Failed to start processing');
       }
     };

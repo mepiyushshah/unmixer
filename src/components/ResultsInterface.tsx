@@ -80,7 +80,7 @@ export default function ResultsInterface({ results }: ResultsInterfaceProps) {
         });
         setMusicWaveform(fallbackMusic);
       }
-    } catch (error) {
+    } catch {
       console.error('Failed to load waveform data:', error);
       // Generate fallback waveform data
       const fallbackVocals = Array.from({ length: 300 }, (_, i) => {
@@ -144,7 +144,7 @@ export default function ResultsInterface({ results }: ResultsInterfaceProps) {
           text: 'Check out these cleanly separated vocals and instrumentals!',
           url: window.location.href,
         });
-      } catch (error) {
+      } catch {
         console.log('Share cancelled');
       }
     } else {

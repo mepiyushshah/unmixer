@@ -15,7 +15,7 @@ export default function AudioPlayer({ file }: AudioPlayerProps) {
   const [audioUrl, setAudioUrl] = useState<string>('');
   
   const audioRef = useRef<HTMLAudioElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
 
   useEffect(() => {
     const url = URL.createObjectURL(file);

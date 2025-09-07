@@ -29,45 +29,6 @@ export default function WaveformVisualization({
   const toneGeneratorRef = useRef<{oscillator: OscillatorNode, audioContext: AudioContext} | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (waveformData && canvasRef.current) {
-      drawWaveform();
-    }
-  }, [waveformData, currentTime]);
-
-  useEffect(() => {
-    // Set demo duration for demo files
-    if (audioUrl.includes('/demo-')) {
-      setDuration(180); // 3 minutes demo duration
-      setIsLoading(false);
-    }
-  }, [audioUrl]);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
-    const handleLoadedMetadata = () => {
-      setDuration(audio.duration);
-      setIsLoading(false);
-    };
-    const handleEnded = () => {
-      if (onPause) onPause();
-    };
-
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-    audio.addEventListener('ended', handleEnded);
-
-    return () => {
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      audio.removeEventListener('ended', handleEnded);
-    };
-  }, [audioUrl, onPause]);
 
   const drawWaveform = () => {
     const canvas = canvasRef.current;
@@ -107,6 +68,44 @@ export default function WaveformVisualization({
     }
   };
 
+  useEffect(() => {
+    if (waveformData && canvasRef.current) {
+      drawWaveform();
+    }
+  }, [waveformData, currentTime, drawWaveform]);
+
+  useEffect(() => {
+    // Set demo duration for demo files
+    if (audioUrl.includes('/demo-')) {
+      setDuration(180); // 3 minutes demo duration
+      setIsLoading(false);
+    }
+  }, [audioUrl]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const handleLoadedMetadata = () => {
+      setDuration(audio.duration);
+      setIsLoading(false);
+    };
+    const handleEnded = () => {
+      if (onPause) onPause();
+    };
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [audioUrl, onPause]);
+
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     const audio = audioRef.current;
@@ -143,7 +142,7 @@ export default function WaveformVisualization({
       gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
       
       return { oscillator, gainNode, audioContext };
-    } catch (error) {
+    } catch {
       console.log('Web Audio API not supported');
       return null;
     }
@@ -166,7 +165,7 @@ export default function WaveformVisualization({
           try {
             toneGeneratorRef.current.oscillator.stop();
             toneGeneratorRef.current.audioContext.close();
-          } catch (e) {
+          } catch {
             // Ignore errors when stopping
           }
           toneGeneratorRef.current = null;
@@ -200,7 +199,7 @@ export default function WaveformVisualization({
                 try {
                   toneGeneratorRef.current.oscillator.stop();
                   toneGeneratorRef.current.audioContext.close();
-                } catch (e) {
+                } catch {
                   // Ignore errors when stopping
                 }
                 toneGeneratorRef.current = null;
@@ -243,7 +242,7 @@ export default function WaveformVisualization({
       try {
         toneGeneratorRef.current.oscillator.stop();
         toneGeneratorRef.current.audioContext.close();
-      } catch (e) {
+      } catch {
         // Ignore errors when stopping
       }
       toneGeneratorRef.current = null;
@@ -276,7 +275,7 @@ export default function WaveformVisualization({
         try {
           toneGeneratorRef.current.oscillator.stop();
           toneGeneratorRef.current.audioContext.close();
-        } catch (e) {
+        } catch {
           // Ignore cleanup errors
         }
       }
