@@ -26,20 +26,78 @@ export default function ProcessingProgress({ processingId, onComplete, onError }
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
+    let ws: WebSocket | null = null;
+    let pollTimer: NodeJS.Timeout | null = null;
+    let cleanup = false;
+    
     // Start actual processing
     const startProcessing = async () => {
       try {
         setMessage('Connecting to processing server...');
         
-        // Poll for processing results
+        // Establish WebSocket connection for real-time updates
+        try {
+          ws = new WebSocket('ws://localhost:3003');
+          
+          ws.onopen = () => {
+            console.log('WebSocket connected');
+            // Subscribe to progress updates for this processing ID
+            ws?.send(JSON.stringify({
+              type: 'subscribe',
+              processingId: processingId
+            }));
+          };
+          
+          ws.onmessage = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              
+              if (data.type === 'progress' && data.processingId === processingId) {
+                console.log('Received real-time progress:', data);
+                setProgress(data.progress || 0);
+                setMessage(data.message || 'Processing...');
+                
+                // Check if completed
+                if (data.status === 'completed') {
+                  onComplete({
+                    processingId: processingId,
+                    vocals: `http://localhost:3003/api/download/${processingId}/vocals?format=mp3`,
+                    music: `http://localhost:3003/api/download/${processingId}/music?format=mp3`,
+                    vocalsWav: `http://localhost:3003/api/download/${processingId}/vocals?format=wav`,
+                    musicWav: `http://localhost:3003/api/download/${processingId}/music?format=wav`,
+                    vocalsFlac: `http://localhost:3003/api/download/${processingId}/vocals?format=flac`,
+                    musicFlac: `http://localhost:3003/api/download/${processingId}/music?format=flac`
+                  });
+                  return;
+                } else if (data.status === 'error') {
+                  onError(data.message || 'Processing failed');
+                  return;
+                }
+              }
+            } catch (error) {
+              console.error('Error parsing WebSocket message:', error);
+            }
+          };
+          
+          ws.onerror = (error) => {
+            console.log('WebSocket error, falling back to polling:', error);
+          };
+          
+        } catch (wsError) {
+          console.log('WebSocket connection failed, using polling fallback:', wsError);
+        }
+        
+        // Poll for processing results as fallback
         const pollResults = async () => {
+          if (cleanup) return;
+          
           try {
             const response = await fetch(`http://localhost:3003/api/status/${processingId}`);
             if (response.ok) {
               const data = await response.json();
               
               if (data.status === 'completed') {
-                clearInterval(pollTimer);
+                if (pollTimer) clearInterval(pollTimer);
                 onComplete({
                   processingId: processingId,
                   vocals: `http://localhost:3003/api/download/${processingId}/vocals?format=mp3`,
@@ -50,18 +108,20 @@ export default function ProcessingProgress({ processingId, onComplete, onError }
                   musicFlac: `http://localhost:3003/api/download/${processingId}/music?format=flac`
                 });
               } else if (data.status === 'error') {
-                clearInterval(pollTimer);
+                if (pollTimer) clearInterval(pollTimer);
                 onError(data.message || 'Processing failed');
               } else {
-                // Update progress
-                setProgress(data.progress || 0);
-                setMessage(data.message || 'Processing...');
+                // Only update progress if WebSocket is not working
+                if (!ws || ws.readyState !== WebSocket.OPEN) {
+                  setProgress(data.progress || 0);
+                  setMessage(data.message || 'Processing...');
+                }
               }
             } else {
               // Fallback to demo if server not available
               setProgress(prev => prev + Math.random() * 5);
               if (progress >= 95) {
-                clearInterval(pollTimer);
+                if (pollTimer) clearInterval(pollTimer);
                 setTimeout(() => {
                   onComplete({
                     processingId: 'demo-fallback',
@@ -79,7 +139,7 @@ export default function ProcessingProgress({ processingId, onComplete, onError }
             console.log('Polling error, using fallback demo');
             setProgress(prev => Math.min(prev + 5, 100));
             if (progress >= 95) {
-              clearInterval(pollTimer);
+              if (pollTimer) clearInterval(pollTimer);
               setTimeout(() => {
                 onComplete({
                   processingId: 'demo-fallback',
@@ -95,11 +155,9 @@ export default function ProcessingProgress({ processingId, onComplete, onError }
           }
         };
         
-        // Poll every 2 seconds
-        const pollTimer = setInterval(pollResults, 2000);
+        // Poll every 5 seconds as fallback (less frequent since WebSocket provides real-time updates)
+        pollTimer = setInterval(pollResults, 5000);
         pollResults(); // Initial call
-        
-        return () => clearInterval(pollTimer);
         
       } catch {
         onError('Failed to start processing');
@@ -107,7 +165,18 @@ export default function ProcessingProgress({ processingId, onComplete, onError }
     };
     
     startProcessing();
-  }, [processingId, onComplete, onError, progress]);
+    
+    // Cleanup function
+    return () => {
+      cleanup = true;
+      if (ws) {
+        ws.close();
+      }
+      if (pollTimer) {
+        clearInterval(pollTimer);
+      }
+    };
+  }, [processingId, onComplete, onError]);
 
   return (
     <div className="w-full max-w-2xl mx-auto">

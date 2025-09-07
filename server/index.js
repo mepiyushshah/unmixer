@@ -47,6 +47,7 @@ const upload = multer({
 
 // WebSocket connections for real-time updates
 const connections = new Map();
+const processingConnections = new Map(); // Map processingId to connectionId
 
 // Processing status storage
 const processingStatus = new Map();
@@ -57,8 +58,28 @@ wss.on('connection', (ws, req) => {
   
   ws.send(JSON.stringify({ type: 'connection', id: connectionId }));
   
+  // Handle messages from client (to link processing ID)
+  ws.on('message', (message) => {
+    try {
+      const data = JSON.parse(message.toString());
+      if (data.type === 'subscribe' && data.processingId) {
+        processingConnections.set(data.processingId, connectionId);
+        console.log(`Client ${connectionId} subscribed to processing ${data.processingId}`);
+      }
+    } catch (error) {
+      console.error('Error parsing WebSocket message:', error);
+    }
+  });
+  
   ws.on('close', () => {
     connections.delete(connectionId);
+    // Remove from processing connections
+    for (const [processingId, connId] of processingConnections.entries()) {
+      if (connId === connectionId) {
+        processingConnections.delete(processingId);
+        break;
+      }
+    }
   });
 });
 
@@ -68,12 +89,17 @@ function broadcastProgress(processingId, progress) {
   processingStatus.set(processingId, progress);
   
   // Also broadcast via WebSocket if connection exists
-  const ws = connections.get(processingId);
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({
-      type: 'progress',
-      progress,
-    }));
+  const connectionId = processingConnections.get(processingId);
+  if (connectionId) {
+    const ws = connections.get(connectionId);
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'progress',
+        processingId,
+        ...progress,
+      }));
+      console.log(`Sent progress update to client ${connectionId}: ${progress.progress}%`);
+    }
   }
 }
 
