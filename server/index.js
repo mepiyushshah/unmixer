@@ -239,11 +239,12 @@ async function fallbackSeparation(inputPath, outputDir, processingId) {
   });
 }
 
-// Generate waveform data
+// Generate real waveform data from audio file
 async function generateWaveform(audioPath) {
   return new Promise((resolve, reject) => {
-    const waveformData = [];
+    console.log('Generating real waveform for:', audioPath);
     
+    // First get audio metadata
     ffmpeg.ffprobe(audioPath, (err, metadata) => {
       if (err) return reject(err);
       
@@ -251,21 +252,72 @@ async function generateWaveform(audioPath) {
       const sampleRate = 44100;
       const channels = metadata.streams[0].channels || 2;
       
-      // Generate sample waveform data (in production, use actual audio analysis)
-      const samples = Math.floor(duration * 100); // 100 points per second
+      // Create temp file for raw audio data
+      const tempRawFile = audioPath + '.raw';
       
-      for (let i = 0; i < samples; i++) {
-        const time = (i / samples) * duration;
-        const amplitude = Math.sin(time * 2) * Math.exp(-time / 10) * (Math.random() * 0.3 + 0.7);
-        waveformData.push(amplitude);
-      }
-      
-      resolve({
-        duration,
-        sampleRate,
-        channels,
-        data: waveformData
-      });
+      // Extract raw audio data using FFmpeg
+      ffmpeg(audioPath)
+        .audioFrequency(sampleRate)
+        .audioChannels(1) // Convert to mono for simpler analysis
+        .audioCodec('pcm_s16le')
+        .format('s16le')
+        .output(tempRawFile)
+        .on('end', () => {
+          // Read the raw audio data
+          fs.readFile(tempRawFile, (readErr, buffer) => {
+            if (readErr) {
+              console.error('Error reading raw audio file:', readErr);
+              return reject(readErr);
+            }
+            
+            try {
+              const waveformData = [];
+              const samplesPerPoint = Math.floor(buffer.length / 2 / 600); // ~600 points for visualization
+              
+              // Process audio samples in chunks
+              for (let i = 0; i < buffer.length - 1; i += samplesPerPoint * 2) {
+                let sum = 0;
+                let count = 0;
+                
+                // Calculate RMS (Root Mean Square) for each chunk
+                for (let j = i; j < i + samplesPerPoint * 2 && j < buffer.length - 1; j += 2) {
+                  const sample = buffer.readInt16LE(j);
+                  sum += sample * sample;
+                  count++;
+                }
+                
+                if (count > 0) {
+                  const rms = Math.sqrt(sum / count);
+                  const normalizedAmplitude = Math.min(rms / 32767, 1.0); // Normalize to 0-1
+                  waveformData.push(normalizedAmplitude);
+                }
+              }
+              
+              // Clean up temp file
+              fs.unlink(tempRawFile, () => {});
+              
+              console.log(`Generated waveform with ${waveformData.length} data points`);
+              
+              resolve({
+                duration,
+                sampleRate,
+                channels,
+                data: waveformData
+              });
+              
+            } catch (processErr) {
+              console.error('Error processing audio data:', processErr);
+              // Clean up temp file
+              fs.unlink(tempRawFile, () => {});
+              reject(processErr);
+            }
+          });
+        })
+        .on('error', (ffmpegErr) => {
+          console.error('FFmpeg error during waveform generation:', ffmpegErr);
+          reject(ffmpegErr);
+        })
+        .run();
     });
   });
 }

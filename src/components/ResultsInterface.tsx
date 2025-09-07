@@ -80,7 +80,7 @@ export default function ResultsInterface({ results }: ResultsInterfaceProps) {
         });
         setMusicWaveform(fallbackMusic);
       }
-    } catch {
+    } catch (error) {
       console.error('Failed to load waveform data:', error);
       // Generate fallback waveform data
       const fallbackVocals = Array.from({ length: 300 }, (_, i) => {

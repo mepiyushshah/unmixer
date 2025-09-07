@@ -29,6 +29,7 @@ export default function WaveformVisualization({
   const toneGeneratorRef = useRef<{oscillator: OscillatorNode, audioContext: AudioContext} | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   const drawWaveform = () => {
     const canvas = canvasRef.current;
