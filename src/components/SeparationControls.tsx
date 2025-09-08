@@ -27,15 +27,15 @@ export default function SeparationControls({ onProcess, isProcessing, disabled }
   ];
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-8">
+    <div className="w-full h-full">
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-8 h-full flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h3 className="text-xl font-semibold text-slate-800 mb-1">
               Separation Settings
             </h3>
-            <p className="text-slate-600">
+            <p className="text-slate-600 text-sm whitespace-nowrap">
               Configure how you want to extract vocals and instruments
             </p>
           </div>
@@ -49,7 +49,7 @@ export default function SeparationControls({ onProcess, isProcessing, disabled }
         </div>
 
         {/* Quick Settings */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-slate-700">
               Processing Quality
@@ -171,7 +171,7 @@ export default function SeparationControls({ onProcess, isProcessing, disabled }
         )}
 
         {/* Process Button */}
-        <div className="text-center">
+        <div className="text-center mt-auto">
           <button
             onClick={() => onProcess(quality, model)}
             disabled={disabled}
@@ -197,7 +197,7 @@ export default function SeparationControls({ onProcess, isProcessing, disabled }
           </button>
           
           {!disabled && (
-            <p className="text-sm text-slate-500 mt-3">
+            <p className="text-xs text-slate-500 mt-3 whitespace-nowrap">
               Processing typically takes 30-90 seconds depending on file length and quality settings
             </p>
           )}

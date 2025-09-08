@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Unmixer - Clean Vocal Extraction",
-  description: "Extract vocals and music cleanly from any audio file with professional quality results",
+  title: "Unmixer - AI-Powered Vocal Separation | Extract Vocals & Instrumentals",
+  description: "Professional AI-powered vocal separation. Extract vocals and instrumentals from any audio file with studio-quality results. Perfect for DJs, producers, and music creators.",
 };
 
 export default function RootLayout({

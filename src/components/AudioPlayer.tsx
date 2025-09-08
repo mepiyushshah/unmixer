@@ -94,10 +94,10 @@ export default function AudioPlayer({ file }: AudioPlayerProps) {
   const progressPercentage = duration ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full h-full">
       {audioUrl && <audio ref={audioRef} src={audioUrl} />}
       
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-8">
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-8 h-full flex flex-col">
         {/* File Info */}
         <div className="flex items-center space-x-4 mb-8">
           <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">

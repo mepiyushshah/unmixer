@@ -33,29 +33,38 @@ export default function WaveformVisualization({
 
   const drawWaveform = () => {
     const canvas = canvasRef.current;
-    if (!canvas || !waveformData) return;
+    if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     const { width, height } = canvas;
-    const barWidth = width / waveformData.length;
-    const progressRatio = duration > 0 ? currentTime / duration : 0;
-    const progressX = width * progressRatio;
-
+    
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
 
+    // If no waveform data, generate a default pattern
+    const dataToUse = waveformData && waveformData.length > 0 
+      ? waveformData 
+      : Array.from({ length: 200 }, (_, i) => {
+          const time = i / 200;
+          return Math.sin(time * 10) * 0.5 + Math.sin(time * 25) * 0.3;
+        });
+
+    const barWidth = width / dataToUse.length;
+    const progressRatio = duration > 0 ? currentTime / duration : 0;
+    const progressX = width * progressRatio;
+
     // Draw waveform bars
-    waveformData.forEach((amplitude, index) => {
+    dataToUse.forEach((amplitude, index) => {
       const x = index * barWidth;
-      const barHeight = Math.abs(amplitude) * height * 0.8;
+      const barHeight = Math.max(2, Math.abs(amplitude) * height * 0.8);
       const y = (height - barHeight) / 2;
 
       // Determine color based on progress
       const isPlayed = x < progressX;
-      ctx.fillStyle = isPlayed ? color : `${color}40`;
-      ctx.fillRect(x, y, barWidth - 1, barHeight);
+      ctx.fillStyle = isPlayed ? color : `${color}60`;
+      ctx.fillRect(x, y, Math.max(1, barWidth - 1), barHeight);
     });
 
     // Draw progress line
@@ -70,10 +79,20 @@ export default function WaveformVisualization({
   };
 
   useEffect(() => {
-    if (waveformData && canvasRef.current) {
+    if (canvasRef.current) {
       drawWaveform();
     }
   }, [waveformData, currentTime, drawWaveform]);
+
+  // Draw waveform when component mounts
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (canvasRef.current) {
+        drawWaveform();
+      }
+    }, 100);
+    return () => clearTimeout(timeout);
+  }, []);
 
   useEffect(() => {
     // Set demo duration for demo files
@@ -110,15 +129,40 @@ export default function WaveformVisualization({
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     const audio = audioRef.current;
-    if (!canvas || !audio || !duration) return;
+    if (!canvas || !duration) return;
 
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const clickRatio = x / canvas.width;
     const newTime = duration * clickRatio;
 
-    audio.currentTime = newTime;
-    setCurrentTime(newTime);
+    // For demo mode or when no audio element
+    if (!audio || audioUrl.includes('/demo-')) {
+      setCurrentTime(newTime);
+      
+      // If playing, restart from new position
+      if (isPlaying && intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = setInterval(() => {
+          setCurrentTime(prev => {
+            const incrementedTime = prev + 1;
+            if (incrementedTime >= (duration || 180)) {
+              if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+              }
+              if (onPause) onPause();
+              return 0;
+            }
+            return incrementedTime;
+          });
+        }, 1000);
+      }
+    } else {
+      // Real audio seeking
+      audio.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
   };
 
   const generateDemoTone = (type: 'vocals' | 'music') => {
@@ -304,15 +348,19 @@ export default function WaveformVisualization({
           </div>
         </div>
 
-        {/* Static waveform visualization */}
-        <div className="relative bg-slate-100 rounded-lg overflow-hidden mb-4">
+        {/* Interactive waveform visualization */}
+        <div className="relative bg-slate-100 rounded-lg overflow-hidden mb-4 hover:bg-slate-200 transition-colors">
           <canvas
             ref={canvasRef}
             width={600}
             height={80}
-            className="w-full h-20 cursor-pointer"
+            className="w-full h-20 cursor-pointer hover:opacity-90 transition-opacity"
             onClick={handleCanvasClick}
+            title="Click anywhere to seek to that position"
           />
+          <div className="absolute bottom-1 right-2 text-xs text-slate-500 pointer-events-none">
+            Click to seek
+          </div>
         </div>
 
         <div className="flex items-center justify-between">
