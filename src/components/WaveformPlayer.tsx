@@ -65,7 +65,7 @@ export default function WaveformPlayer({
     wavesurfer.on('ready', () => {
       setIsLoading(false);
       setDuration(wavesurfer.getDuration());
-      if (onPlay) onPlay();
+      // Removed autoplay - tracks should only play when user clicks Play
     });
 
     wavesurfer.on('audioprocess', () => {
