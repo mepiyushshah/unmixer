@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Download, Mic, Music2, Share2, Volume2, RefreshCw, FileAudio } from 'lucide-react';
-import WaveformVisualization from './WaveformVisualization';
+import WaveformPlayer from './WaveformPlayer';
 
 interface ResultsInterfaceProps {
   results: {
@@ -212,21 +212,21 @@ export default function ResultsInterface({ results }: ResultsInterfaceProps) {
         </div>
       </div>
 
-      {/* Results with Waveforms */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Results with Waveforms - Vertical Stack */}
+      <div className="space-y-6 md:space-y-8">
         {/* Vocals */}
-        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-100">
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <Mic className="w-6 h-6 text-white" />
+        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-4 md:p-6 border border-purple-100">
+          <div className="flex items-center space-x-3 mb-4 md:mb-6">
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+              <Mic className="w-5 h-5 md:w-6 md:h-6 text-white" />
             </div>
             <div>
-              <h4 className="text-lg font-semibold text-slate-800">Vocals</h4>
-              <p className="text-sm text-slate-600">Isolated vocals track</p>
+              <h4 className="text-base md:text-lg font-semibold text-slate-800">Vocals</h4>
+              <p className="text-xs md:text-sm text-slate-600">Isolated vocals track</p>
             </div>
           </div>
 
-          <WaveformVisualization
+          <WaveformPlayer
             audioUrl={results.vocals}
             waveformData={vocalsWaveform}
             title="Vocal Track"
@@ -238,7 +238,7 @@ export default function ResultsInterface({ results }: ResultsInterfaceProps) {
 
           <button
             onClick={() => downloadFile(getDownloadUrl('vocals'), `vocals.${selectedFormat}`)}
-            className="w-full mt-4 flex items-center justify-center space-x-2 px-4 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors"
+            className="w-full mt-3 md:mt-4 flex items-center justify-center space-x-2 px-3 md:px-4 py-2 md:py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors text-sm md:text-base"
           >
             <Download className="w-4 h-4" />
             <span className="font-medium">Download Vocals ({selectedFormat.toUpperCase()})</span>
@@ -246,18 +246,18 @@ export default function ResultsInterface({ results }: ResultsInterfaceProps) {
         </div>
 
         {/* Instrumentals */}
-        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-100">
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-              <Music2 className="w-6 h-6 text-white" />
+        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-4 md:p-6 border border-blue-100">
+          <div className="flex items-center space-x-3 mb-4 md:mb-6">
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+              <Music2 className="w-5 h-5 md:w-6 md:h-6 text-white" />
             </div>
             <div>
-              <h4 className="text-lg font-semibold text-slate-800">Instrumentals</h4>
-              <p className="text-sm text-slate-600">Music without vocals</p>
+              <h4 className="text-base md:text-lg font-semibold text-slate-800">Instrumentals</h4>
+              <p className="text-xs md:text-sm text-slate-600">Music without vocals</p>
             </div>
           </div>
 
-          <WaveformVisualization
+          <WaveformPlayer
             audioUrl={results.music}
             waveformData={musicWaveform}
             title="Instrumental Track"
@@ -269,7 +269,7 @@ export default function ResultsInterface({ results }: ResultsInterfaceProps) {
 
           <button
             onClick={() => downloadFile(getDownloadUrl('music'), `instrumentals.${selectedFormat}`)}
-            className="w-full mt-4 flex items-center justify-center space-x-2 px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+            className="w-full mt-3 md:mt-4 flex items-center justify-center space-x-2 px-3 md:px-4 py-2 md:py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm md:text-base"
           >
             <Download className="w-4 h-4" />
             <span className="font-medium">Download Instrumentals ({selectedFormat.toUpperCase()})</span>
