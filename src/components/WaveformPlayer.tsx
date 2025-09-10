@@ -47,8 +47,9 @@ export default function WaveformPlayer({
       barGap: 1,
       height: window.innerWidth < 768 ? 64 : 80, // Responsive height
       normalize: true,
-      backend: 'MediaElement',
+      backend: 'WebAudio', // Changed from MediaElement to WebAudio for better pause/resume
       mediaControls: false,
+      interact: true, // Enable interaction for seeking
       plugins: [
         RegionsPlugin.create({
           regions: [],
@@ -136,8 +137,10 @@ export default function WaveformPlayer({
     if (!wavesurfer) return;
 
     if (wavesurfer.isPlaying()) {
+      // Pause: stops playback but preserves current position
       wavesurfer.pause();
     } else {
+      // Play: resumes from current position (doesn't restart from beginning)
       wavesurfer.play();
     }
   };
@@ -146,6 +149,7 @@ export default function WaveformPlayer({
     const wavesurfer = wavesurferRef.current;
     if (!wavesurfer) return;
 
+    // Stop: resets to beginning (different from pause which preserves position)
     wavesurfer.stop();
     setCurrentTime(0);
   };
