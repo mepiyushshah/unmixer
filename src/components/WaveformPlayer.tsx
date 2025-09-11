@@ -27,6 +27,7 @@ export default function WaveformPlayer({
 }: WaveformPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
+  const initializedRef = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -35,6 +36,7 @@ export default function WaveformPlayer({
 
   useEffect(() => {
     if (!containerRef.current) return;
+    if (initializedRef.current) return; // Guard against double-init (React Strict Mode)
 
     // Create WaveSurfer instance
     const wavesurfer = WaveSurfer.create({
@@ -61,6 +63,7 @@ export default function WaveformPlayer({
     });
 
     wavesurferRef.current = wavesurfer;
+    initializedRef.current = true;
 
     // Set up event listeners
     wavesurfer.on('ready', () => {
@@ -89,18 +92,32 @@ export default function WaveformPlayer({
       if (onPlay) onPlay();
     });
 
-    // Load audio
+    return () => {
+      wavesurfer.destroy();
+      wavesurferRef.current = null;
+      initializedRef.current = false;
+    };
+  }, []);
+
+  // Load/replace audio when the url or provided waveform data changes
+  useEffect(() => {
+    const wavesurfer = wavesurferRef.current;
+    if (!wavesurfer) return;
+
+    setIsLoading(true);
+    setCurrentTime(0);
+
     if (audioUrl && !audioUrl.includes('/demo-')) {
       wavesurfer.load(audioUrl);
     } else {
       // For demo mode, create a silent audio buffer
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const sampleRate = audioContext.sampleRate;
-      const duration = 180; // 3 minutes for demo
-      const length = sampleRate * duration;
+      const demoDuration = 180; // 3 minutes for demo
+      const length = sampleRate * demoDuration;
       const buffer = audioContext.createBuffer(1, length, sampleRate);
       const data = buffer.getChannelData(0);
-      
+
       // Generate demo waveform data
       for (let i = 0; i < length; i++) {
         const time = i / sampleRate;
@@ -111,14 +128,10 @@ export default function WaveformPlayer({
           data[i] = Math.sin(time * 440) * 0.01; // Very quiet sine wave
         }
       }
-      
+
       wavesurfer.loadDecodedData(buffer);
     }
-
-    return () => {
-      wavesurfer.destroy();
-    };
-  }, [audioUrl, waveformData, color, onPlay, onPause]);
+  }, [audioUrl, waveformData]);
 
   // Sync external play/pause state
   useEffect(() => {
